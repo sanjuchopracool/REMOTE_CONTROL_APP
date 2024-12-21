@@ -19,7 +19,6 @@ qt_add_qml_module(appREMOTE_CONTROL_APP
         Main.qml
         RESOURCES android/AndroidManifest.xml android/build.gradle android/res/values/libs.xml android/res/xml/qtprovider_paths.xml
         QML_FILES JoyStick.qml
-        RESOURCES background.png finger.png
         QML_FILES
 )
 

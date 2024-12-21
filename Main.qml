@@ -3,53 +3,63 @@ import QtQuick.Controls
 
 Window {
     id: main
-
-    width: 640
-    height: 480
+    width: 1920
+    height: 1080
     visible: true
     title: qsTr("REMOTE_CONTROL")
 
-    Button {
-        id: showTrims
-        text : qsTr("Show Trims")
-        anchors.top : parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
+    property double contentRotation : width > height ? 0 : -90
+    property double contentWidth : width > height ? width : height
+    property double contentHeight : width > height ? height : width
 
-        onClicked : {
-            joystickLeft.showTrims = !joystickLeft.showTrims
-            joystickRight.showTrims = !joystickRight.showTrims
+    Rectangle {
+        anchors.centerIn: parent
+        rotation : main.contentRotation
+        width : main.contentWidth
+        height : main.contentHeight
+
+        Button {
+            id: showTrims
+            text : joystickLeft.showTrims ? qsTr("Hide Trims") : qsTr("Show Trims")
+            anchors.top : parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            onClicked : {
+                joystickLeft.showTrims = !joystickLeft.showTrims
+                joystickRight.showTrims = !joystickRight.showTrims
+            }
         }
-    }
 
-    JoyStick {
-        id: joystickLeft
-        width : main.width / 2.5
-        height : width
-        anchors.left : parent.left
-        anchors.bottom: parent.bottom
-    }
-
-    Connections {
-        target: joystickLeft
-        function onJoystickMoved(x, y) {
-            console.log("Left Moved!", x, y)
+        JoyStick {
+            id: joystickLeft
+            width : parent.width / 2.5
+            height : width
+            anchors.left : parent.left
+            anchors.bottom: parent.bottom
         }
-    }
 
-    JoyStick {
-        id: joystickRight
-        showVerticalTrimOnLeft: true
+        Connections {
+            target: joystickLeft
+            function onJoystickMoved(x, y) {
+                console.log("Left Moved!", x, y)
+            }
+        }
 
-        width : main.width / 2.5
-        height : width
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-    }
+        JoyStick {
+            id: joystickRight
+            showVerticalTrimOnLeft: true
 
-    Connections {
-        target: joystickRight
-        function onJoystickMoved(x, y) {
-            console.log("Right Moved!", x, y)
+            width : parent.width / 2.5
+            height : width
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+        }
+
+        Connections {
+            target: joystickRight
+            function onJoystickMoved(x, y) {
+                console.log("Right Moved!", x, y)
+            }
         }
     }
 }

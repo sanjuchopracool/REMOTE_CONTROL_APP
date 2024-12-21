@@ -53,10 +53,14 @@ Item {
             mouse.posChanged()
         }
 
-        MouseArea {
+        MultiPointTouchArea  {
             id: mouse
-            property real mouseX2 : root.verticalOnly ? width * 0.5 : mouseX
-            property real mouseY2 : root.horizontalOnly ? height * 0.5 : mouseY
+            touchPoints: [
+                TouchPoint { id: point1 }
+            ]
+            property real mouseX2 : root.verticalOnly ? width * 0.5 : point1.x
+            property real mouseY2 : root.horizontalOnly ? height * 0.5 : point1.y
+
             property real fingerAngle : Math.atan2(mouseX2, mouseY2)
             property int mcx : mouseX2 - width * 0.5
             property int mcy : mouseY2 - height * 0.5
@@ -79,10 +83,10 @@ Item {
 
             onReleased: {
                 returnAnimation.restart()
-                console.log("RESTART")
+                // console.log("RESTART")
             }
 
-            onPositionChanged: {
+            onUpdated: {
                 if (fingerInBounds) {
                     thumb.anchors.horizontalCenterOffset = mcx
                     thumb.anchors.verticalCenterOffset = mcy
