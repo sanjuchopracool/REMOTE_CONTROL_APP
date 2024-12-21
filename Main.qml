@@ -8,7 +8,7 @@ Window {
     visible: true
     title: qsTr("REMOTE_CONTROL")
 
-    property double contentRotation : width > height ? 0 : -90
+    property double contentRotation : width > height ? 0 : 90
     property double contentWidth : width > height ? width : height
     property double contentHeight : width > height ? height : width
 

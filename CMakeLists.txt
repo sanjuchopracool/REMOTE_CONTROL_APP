@@ -4,7 +4,7 @@ project(REMOTE_CONTROL_APP VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Bluetooth Core Gui Quick)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -20,6 +20,9 @@ qt_add_qml_module(appREMOTE_CONTROL_APP
         RESOURCES android/AndroidManifest.xml android/build.gradle android/res/values/libs.xml android/res/xml/qtprovider_paths.xml
         QML_FILES JoyStick.qml
         QML_FILES
+SOURCES characteristicinfo.cpp device.cpp deviceinfo.cpp main.cpp serviceinfo.cpp characteristicinfo.h device.h deviceinfo.h serviceinfo.h
+QML_FILES Characteristics.qml Devices.qml Dialog.qml Header.qml Label.qml  Menu.qml Services.qml
+RESOURCES assets/busy_dark.png
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -33,8 +36,11 @@ set_target_properties(appREMOTE_CONTROL_APP PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-target_link_libraries(appREMOTE_CONTROL_APP
-    PRIVATE Qt6::Quick
+target_link_libraries(appREMOTE_CONTROL_APP PUBLIC
+    Qt6::Bluetooth
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Quick
 )
 
 include(GNUInstallDirs)
