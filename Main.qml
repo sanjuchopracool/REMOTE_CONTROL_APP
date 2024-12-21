@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Layouts
+
 
 Window {
     id: main
@@ -12,53 +13,36 @@ Window {
     property double contentWidth : width > height ? width : height
     property double contentHeight : width > height ? height : width
 
-    Rectangle {
+    Controller {
+        id: joystickPage
         anchors.centerIn: parent
         rotation : main.contentRotation
         width : main.contentWidth
         height : main.contentHeight
 
-        Button {
-            id: showTrims
-            text : joystickLeft.showTrims ? qsTr("Hide Trims") : qsTr("Show Trims")
-            anchors.top : parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
 
-            onClicked : {
-                joystickLeft.showTrims = !joystickLeft.showTrims
-                joystickRight.showTrims = !joystickRight.showTrims
+        onShowDevices : {
+            pagesLayout.visible = true
+        }
+
+        StackLayout {
+            id: pagesLayout
+            anchors.fill: parent
+            anchors.margins : parent.height * 0.05
+            visible : false
+
+            currentIndex: 0
+
+            Devices {
+                onShowServices: pagesLayout.currentIndex = 1
             }
-        }
-
-        JoyStick {
-            id: joystickLeft
-            width : parent.width / 2.5
-            height : width
-            anchors.left : parent.left
-            anchors.bottom: parent.bottom
-        }
-
-        Connections {
-            target: joystickLeft
-            function onJoystickMoved(x, y) {
-                console.log("Left Moved!", x, y)
+            Services {
+                onShowDevices: pagesLayout.currentIndex = 0
+                onShowCharacteristics: pagesLayout.currentIndex = 2
             }
-        }
-
-        JoyStick {
-            id: joystickRight
-            showVerticalTrimOnLeft: true
-
-            width : parent.width / 2.5
-            height : width
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-        }
-
-        Connections {
-            target: joystickRight
-            function onJoystickMoved(x, y) {
-                console.log("Right Moved!", x, y)
+            Characteristics {
+                onShowDevices: pagesLayout.currentIndex = 0
+                onShowServices: pagesLayout.currentIndex = 1
             }
         }
     }

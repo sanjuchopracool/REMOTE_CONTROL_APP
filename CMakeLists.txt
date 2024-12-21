@@ -23,6 +23,7 @@ qt_add_qml_module(appREMOTE_CONTROL_APP
 SOURCES characteristicinfo.cpp device.cpp deviceinfo.cpp main.cpp serviceinfo.cpp characteristicinfo.h device.h deviceinfo.h serviceinfo.h
 QML_FILES Characteristics.qml Devices.qml Dialog.qml Header.qml Label.qml  Menu.qml Services.qml
 RESOURCES assets/busy_dark.png
+QML_FILES Controller.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
