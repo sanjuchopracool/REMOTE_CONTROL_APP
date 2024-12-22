@@ -6,7 +6,7 @@
 
 namespace {
 enum Field { Roll = 0, Pitch = 2, Throttle = 4, Yaw = 6 };
-constexpr int double_to_int16_factor = 1000;
+constexpr int double_to_int16_factor = 10000;
 QReadWriteLock lock;
 } // namespace
 ControllerObject::ControllerObject(QObject *parent)
@@ -27,7 +27,7 @@ ControllerObject::ControllerObject(QObject *parent)
         emit dataUpdated(m_data);
     });
 
-    m_data_timer->start(50);
+    m_data_timer->start(20);
 }
 
 ControllerObject::~ControllerObject()
