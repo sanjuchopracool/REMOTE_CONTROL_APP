@@ -28,7 +28,6 @@ Window {
         StackLayout {
             id: pagesLayout
             anchors.fill: parent
-            anchors.margins : parent.height * 0.05
             visible : false
 
             currentIndex: 0

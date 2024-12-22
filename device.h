@@ -17,6 +17,7 @@
 #include <QVariant>
 
 #include <QQmlEngine>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 class QBluetoothDeviceInfo;
@@ -75,6 +76,8 @@ private slots:
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
 
+    void writeData();
+
 Q_SIGNALS:
     void devicesUpdated();
     void servicesUpdated();
@@ -97,6 +100,8 @@ private:
     QLowEnergyController *controller = nullptr;
     bool m_deviceScanState = false;
     bool randomAddress = false;
+    QLowEnergyService *m_rx_tx_service = nullptr;
+    QTimer *m_data_timer = nullptr;
 };
 
 #endif // DEVICE_H

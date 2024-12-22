@@ -17,8 +17,14 @@
 #include <QGuiApplication>
 #endif
 
+#include <QBluetoothUuid>
+
 using namespace Qt::StringLiterals;
 
+namespace {
+const QUuid tx_uuid("{6e400003-b5a3-f393-e0a9-e50e24dcca9e}");
+const QUuid rx_uuid("{6e400002-b5a3-f393-e0a9-e50e24dcca9e}");
+}
 Device::Device()
 {
     //! [les-devicediscovery-1]
@@ -35,6 +41,9 @@ Device::Device()
     //! [les-devicediscovery-1]
 
     setUpdate(u"Search"_s);
+    m_data_timer = new QTimer(this);
+    connect(m_data_timer, &QTimer::timeout, this, &Device::writeData);
+    m_data_timer->start(1000);
 }
 
 Device::~Device()
@@ -74,6 +83,11 @@ void Device::stopDeviceDiscovery()
 void Device::addDevice(const QBluetoothDeviceInfo &info)
 {
     if (info.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
+        // // it should have ESP32 in the name
+        // if (!info.name().contains("ESP32")) {
+        //     return;
+        // }
+
         auto devInfo = new DeviceInfo(info);
         auto it = std::find_if(devices.begin(), devices.end(),
                                [devInfo](DeviceInfo *dev) {
@@ -187,6 +201,7 @@ void Device::addLowEnergyService(const QBluetoothUuid &serviceUuid)
         qWarning() << "Cannot create service for uuid";
         return;
     }
+
     //! [les-service-1]
     auto serv = new ServiceInfo(service);
     m_services.append(serv);
@@ -217,30 +232,36 @@ void Device::connectToService(const QString &uuid)
         }
     }
 
-    if (!service)
+    m_rx_tx_service = service;
+    qDebug() << "SANJAY SERVICE =>>>>>>>>>>>" << m_rx_tx_service;
+    if (!m_rx_tx_service)
         return;
 
     qDeleteAll(m_characteristics);
     m_characteristics.clear();
     emit characteristicsUpdated();
 
-    if (service->state() == QLowEnergyService::RemoteService) {
+    if (m_rx_tx_service->state() == QLowEnergyService::RemoteService) {
         //! [les-service-3]
-        connect(service, &QLowEnergyService::stateChanged,
-                this, &Device::serviceDetailsDiscovered);
-        service->discoverDetails();
+        connect(m_rx_tx_service,
+                &QLowEnergyService::stateChanged,
+                this,
+                &Device::serviceDetailsDiscovered);
+        m_rx_tx_service->discoverDetails();
         setUpdate(u"Back\n(Discovering details...)"_s);
         //! [les-service-3]
+        qDebug() << "SANJAY SERVICE 2 =>>>>>>>>>>>" << m_rx_tx_service;
         return;
     }
 
     //discovery already done
-    const QList<QLowEnergyCharacteristic> chars = service->characteristics();
+    const QList<QLowEnergyCharacteristic> chars = m_rx_tx_service->characteristics();
     for (const QLowEnergyCharacteristic &ch : chars) {
         auto cInfo = new CharacteristicInfo(ch);
         m_characteristics.append(cInfo);
     }
 
+    qDebug() << "SANJAY =>>>>>>>>>>>" << m_rx_tx_service;
     QTimer::singleShot(0, this, &Device::characteristicsUpdated);
 }
 
@@ -281,6 +302,7 @@ void Device::disconnectFromDevice()
 void Device::deviceDisconnected()
 {
     qWarning() << "Disconnect from device";
+    connected = false;
     emit disconnected();
 }
 
@@ -295,14 +317,15 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
             QMetaObject::invokeMethod(this, "characteristicsUpdated",
                                       Qt::QueuedConnection);
         }
+        qDebug() << "SANJAY SERVICE 3 =>>>>>>>>>>>" << m_rx_tx_service;
         return;
     }
 
     auto service = qobject_cast<QLowEnergyService *>(sender());
-    if (!service)
+    if (!service) {
+        qDebug() << "SANJAY SERVICE 4 =>>>>>>>>>>>" << m_rx_tx_service;
         return;
-
-
+    }
 
     //! [les-chars]
     const QList<QLowEnergyCharacteristic> chars = service->characteristics();
@@ -313,6 +336,39 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     //! [les-chars]
 
     emit characteristicsUpdated();
+}
+
+void Device::writeData()
+{
+    qDebug() << Q_FUNC_INFO << connected;
+    if (controller) {
+        qDebug() << controller->state();
+    }
+    if (connected && controller->state() == QLowEnergyController::DiscoveredState) {
+        if (m_rx_tx_service) {
+            // for (const auto &info : m_rx_tx_service->characteristics()) {
+            //     auto types = info.properties();
+            //     qDebug() << QString("0x%1").arg(types, 8, 16, QLatin1Char('0'));
+            //     qDebug() << info.name() << " uuid = " << info.uuid() << "value = " << info.value()
+            //              << " write = " << (info.properties() & QLowEnergyCharacteristic::Write);
+            // }
+            QLowEnergyCharacteristic characteristic = m_rx_tx_service->characteristic(
+                QBluetoothUuid(rx_uuid));
+            Q_ASSERT(characteristic.isValid());
+            // for (const auto &info : characteristic.descriptors()) {
+            //     qDebug() << " valid = " << info.isValid() << " value = " << info.value()
+            //              << " name = " << info.name() << " type = " << info.type()
+            //              << " uuid = " << info.uuid();
+            // }
+
+            auto ControlPointDesc = characteristic.descriptor(
+                QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+            if (ControlPointDesc.isValid()) {
+                // qDebug() << "Control Point Descriptor";
+                m_rx_tx_service->readDescriptor(ControlPointDesc);
+            }
+        }
+    }
 }
 
 void Device::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error error)

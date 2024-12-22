@@ -13,6 +13,10 @@ ServiceInfo::ServiceInfo(QLowEnergyService *service):
     m_service(service)
 {
     m_service->setParent(this);
+    if (m_service) {
+        m_is_rx_tx = (m_service->serviceUuid().toString()
+                      == "{6e400001-b5a3-f393-e0a9-e50e24dcca9e}");
+    }
 }
 
 QLowEnergyService *ServiceInfo::service() const
@@ -22,6 +26,10 @@ QLowEnergyService *ServiceInfo::service() const
 
 QString ServiceInfo::getName() const
 {
+    if (m_is_rx_tx) {
+        return {"RX_TX"};
+    }
+
     if (!m_service)
         return QString();
 

@@ -62,7 +62,7 @@ Rectangle {
         delegate: Rectangle {
             required property var modelData
             id: box
-            height: 100
+            height: 70
             color: "lightsteelblue"
             border.width: 2
             border.color: "black"
@@ -70,10 +70,28 @@ Rectangle {
             width: servicesview.width
 
             MouseArea {
-                anchors.fill: parent
+                anchors.right: parent.right
+                anchors.rightMargin : 5
+                anchors.verticalCenter : parent.verticalCenter
+
+                width : connectText.implicitWidth + 10
+                height : connectText.implicitHeight + 10
+
+                visible : box.modelData.isRxTx
                 onClicked: {
                     Device.connectToService(box.modelData.serviceUuid)
                     servicesPage.showCharacteristics()
+                }
+
+                Rectangle {
+                    anchors.fill : parent
+                    border.width : 1
+                }
+
+                Text {
+                    id : connectText
+                    anchors.centerIn : parent
+                    text : qsTr("Connect")
                 }
             }
 
