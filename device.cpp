@@ -19,6 +19,8 @@
 
 #include <QBluetoothUuid>
 
+#include <controllerobject.h>
+
 using namespace Qt::StringLiterals;
 
 namespace {
@@ -42,9 +44,9 @@ Device::Device()
     //! [les-devicediscovery-1]
 
     setUpdate(u"Search"_s);
-    m_data_timer = new QTimer(this);
-    connect(m_data_timer, &QTimer::timeout, this, &Device::writeData);
-    m_data_timer->start(50);
+
+    m_controler_object = new ControllerObject(this);
+    connect(m_controler_object, &ControllerObject::dataUpdated, this, &Device::writeData);
 }
 
 Device::~Device()
@@ -380,6 +382,10 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
         if (ch.uuid() == tx_uuid || ch.uuid() == rx_uuid) {
             auto cInfo = new CharacteristicInfo(ch);
             m_characteristics.append(cInfo);
+
+            if (ch.uuid() == tx_uuid) {
+                m_tx_characteric = m_characteristics.last()->getCharacteristic();
+            }
         }
     }
     //! [les-chars]
@@ -402,14 +408,13 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     emit characteristicsUpdated();
 }
 
-void Device::writeData()
+void Device::writeData(QByteArray data)
 {
     if (connected && m_rx_tx_service && controller
         && controller->state() == QLowEnergyController::DiscoveredState) {
-        auto characteristic = m_rx_tx_service->characteristic(tx_uuid);
-        if (characteristic.isValid()) {
-            m_rx_tx_service->writeCharacteristic(characteristic,
-                                                 "Hello Sanjay Chopra",
+        if (m_tx_characteric.isValid()) {
+            m_rx_tx_service->writeCharacteristic(m_tx_characteric,
+                                                 data,
                                                  QLowEnergyService::WriteMode::WriteWithResponse);
         }
     }

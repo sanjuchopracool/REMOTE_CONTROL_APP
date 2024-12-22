@@ -18,6 +18,7 @@
 
 #include <QQmlEngine>
 #include <QTimer>
+#include <controllerobject.h>
 
 QT_BEGIN_NAMESPACE
 class QBluetoothDeviceInfo;
@@ -38,6 +39,7 @@ class Device: public QObject
     Q_PROPERTY(bool rxTxConnected READ rxTxConnected NOTIFY rxTxConnectionChanged)
     Q_PROPERTY(QString connectedDeviceName READ connectedDeviceName NOTIFY currentDeviceChanged)
     Q_PROPERTY(QString connectedDeviceId READ connectedDeviceId NOTIFY currentDeviceChanged)
+    Q_PROPERTY(ControllerObject *controller MEMBER m_controler_object CONSTANT)
 
     QML_ELEMENT
     QML_SINGLETON
@@ -83,7 +85,7 @@ private slots:
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
 
-    void writeData();
+    void writeData(QByteArray data);
 
 Q_SIGNALS:
     void devicesUpdated();
@@ -110,7 +112,8 @@ private:
     bool m_deviceScanState = false;
     bool randomAddress = false;
     QLowEnergyService *m_rx_tx_service = nullptr;
-    QTimer *m_data_timer = nullptr;
+    QLowEnergyCharacteristic m_tx_characteric;
+    ControllerObject *m_controler_object = nullptr;
 };
 
 #endif // DEVICE_H

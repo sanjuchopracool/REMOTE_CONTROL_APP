@@ -25,6 +25,7 @@ QML_FILES Characteristics.qml Devices.qml Dialog.qml Header.qml Label.qml  Menu.
 RESOURCES assets/busy_dark.png
 QML_FILES Controller.qml
 QML_FILES ClickableLabel.qml
+SOURCES controllerobject.h controllerobject.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

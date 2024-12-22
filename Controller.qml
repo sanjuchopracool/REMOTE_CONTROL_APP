@@ -63,7 +63,7 @@ Rectangle {
         Connections {
             target: joystickLeft
             function onJoystickMoved(x, y) {
-                console.log("Left Moved!", x, y)
+                Device.controller.leftStickMoved(x,y)
             }
         }
 
@@ -80,7 +80,7 @@ Rectangle {
         Connections {
             target: joystickRight
             function onJoystickMoved(x, y) {
-                console.log("Right Moved!", x, y)
+                Device.controller.rightStickMoved(x,y)
             }
         }
     }
