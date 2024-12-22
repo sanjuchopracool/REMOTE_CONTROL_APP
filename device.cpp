@@ -237,6 +237,40 @@ void Device::connectToService(const QString &uuid)
     if (!m_rx_tx_service)
         return;
 
+    connect(m_rx_tx_service,
+            &QLowEnergyService::characteristicChanged,
+            this,
+            [this](const QLowEnergyCharacteristic &ch, const QByteArray &data) {
+                qDebug() << "CH name = " << ch.name() << " uuid = " << ch.uuid() << data;
+
+                auto characteristic = m_rx_tx_service->characteristic(QBluetoothUuid(rx_uuid));
+                if (characteristic.isValid()) {
+                    qDebug() << "CH name = " << characteristic.name()
+                             << " uuid = " << characteristic.uuid() << data;
+                    auto writeDes = characteristic.descriptor(
+                        QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+                    if (writeDes.isValid()) {
+                        m_rx_tx_service->writeDescriptor(writeDes, "Hello");
+                    } else {
+                        qDebug() << "Invalid write des!";
+                        m_rx_tx_service
+                            ->writeCharacteristic(characteristic,
+                                                  "Hello Sanjay Chopra",
+                                                  QLowEnergyService::WriteMode::WriteWithResponse);
+                    }
+                }
+                // auto ControlPointDesc = characteristic.descriptor(
+                //     QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+                // if (ControlPointDesc.isValid()) {
+                //     // qDebug() << "Control Point Descriptor";
+                //     m_rx_tx_service->readDescriptor(ControlPointDesc);
+                // }
+            });
+
+    // connect(m_service, &QLowEnergyService::stateChanged, this, &DeviceHandler::serviceStateChanged);
+    // connect(m_service, &QLowEnergyService::characteristicChanged, this, &DeviceHandler::updateHeartRateValue);
+    // connect(m_service, &QLowEnergyService::descriptorWritten, this, &DeviceHandler::confirmedDescriptorWrite);
+
     qDeleteAll(m_characteristics);
     m_characteristics.clear();
     emit characteristicsUpdated();
@@ -335,38 +369,64 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     }
     //! [les-chars]
 
+    for (CharacteristicInfo *characteristicInfo : m_characteristics) {
+        auto characteristic = characteristicInfo->getCharacteristic();
+        if (characteristic.isValid()) {
+            qDebug() << "Characterstic Name = " << characteristic.name() << " "
+                     << characteristic.uuid() << " " << characteristic.value();
+            for (const auto &info : characteristic.descriptors()) {
+                qDebug() << " valid = " << info.isValid() << " value = " << info.value()
+                         << " name = " << info.name() << " type = " << info.type()
+                         << " uuid = " << info.uuid();
+            }
+
+            auto notificationDesc = characteristic.descriptor(
+                QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+            if (notificationDesc.isValid())
+                m_rx_tx_service->writeDescriptor(notificationDesc, QByteArray::fromHex("HELLO"));
+        }
+    }
     emit characteristicsUpdated();
 }
 
 void Device::writeData()
 {
+    return;
     qDebug() << Q_FUNC_INFO << connected;
     if (controller) {
         qDebug() << controller->state();
     }
     if (connected && controller->state() == QLowEnergyController::DiscoveredState) {
         if (m_rx_tx_service) {
-            // for (const auto &info : m_rx_tx_service->characteristics()) {
-            //     auto types = info.properties();
-            //     qDebug() << QString("0x%1").arg(types, 8, 16, QLatin1Char('0'));
-            //     qDebug() << info.name() << " uuid = " << info.uuid() << "value = " << info.value()
-            //              << " write = " << (info.properties() & QLowEnergyCharacteristic::Write);
-            // }
-            QLowEnergyCharacteristic characteristic = m_rx_tx_service->characteristic(
-                QBluetoothUuid(rx_uuid));
-            Q_ASSERT(characteristic.isValid());
-            // for (const auto &info : characteristic.descriptors()) {
-            //     qDebug() << " valid = " << info.isValid() << " value = " << info.value()
-            //              << " name = " << info.name() << " type = " << info.type()
-            //              << " uuid = " << info.uuid();
-            // }
-
-            auto ControlPointDesc = characteristic.descriptor(
-                QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
-            if (ControlPointDesc.isValid()) {
-                // qDebug() << "Control Point Descriptor";
-                m_rx_tx_service->readDescriptor(ControlPointDesc);
+            for (const auto &info : m_rx_tx_service->characteristics()) {
+                auto types = info.properties();
+                qDebug() << QString("Permission 0x%1").arg(types, 8, 16, QLatin1Char('0'))
+                         << info.name() << " uuid = " << info.uuid() << "value = " << info.value();
             }
+            QLowEnergyCharacteristic characteristic = m_rx_tx_service->characteristic(
+                QBluetoothUuid(tx_uuid));
+            if (characteristic.isValid()) {
+                for (const auto &info : characteristic.descriptors()) {
+                    qDebug() << "Tx valid = " << info.isValid() << " value = " << info.value()
+                             << " name = " << info.name() << " type = " << info.type()
+                             << " uuid = " << info.uuid();
+                }
+            }
+
+            characteristic = m_rx_tx_service->characteristic(QBluetoothUuid(rx_uuid));
+            if (characteristic.isValid()) {
+                for (const auto &info : characteristic.descriptors()) {
+                    qDebug() << "RX valid = " << info.isValid() << " value = " << info.value()
+                             << " name = " << info.name() << " type = " << info.type()
+                             << " uuid = " << info.uuid();
+                }
+            }
+            // auto ControlPointDesc = characteristic.descriptor(
+            //     QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+            // if (ControlPointDesc.isValid()) {
+            //     // qDebug() << "Control Point Descriptor";
+            //     m_rx_tx_service->readDescriptor(ControlPointDesc);
+            // }
         }
     }
 }

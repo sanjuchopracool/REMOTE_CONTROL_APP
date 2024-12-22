@@ -19,7 +19,7 @@ class ServiceInfo: public QObject
     Q_PROPERTY(QString serviceName READ getName NOTIFY serviceChanged)
     Q_PROPERTY(QString serviceUuid READ getUuid NOTIFY serviceChanged)
     Q_PROPERTY(QString serviceType READ getType NOTIFY serviceChanged)
-    Q_PROPERTY(bool isRxTx READ isRxTx)
+    Q_PROPERTY(bool isRxTx READ isRxTx CONSTANT)
 
     QML_ANONYMOUS
 
