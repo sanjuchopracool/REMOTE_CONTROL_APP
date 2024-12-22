@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="comp.amartech.remoteApp" android:installLocation="auto" android:versionCode="-- %%0.0.1%% --" android:versionName="-- %%v1%% --">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.amartech.remoteApp" android:installLocation="auto" android:versionCode="1" android:versionName="1.0">
     <!-- %%INSERT_PERMISSIONS -->
     <!-- %%INSERT_FEATURES -->
     <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:smallScreens="true"/>
-    <application android:name="org.qtproject.qt.android.bindings.QtApplication" android:hardwareAccelerated="true" android:label="-- %%RC Controller%% --" android:requestLegacyExternalStorage="true" android:allowBackup="true" android:fullBackupOnly="false">
+    <application android:name="org.qtproject.qt.android.bindings.QtApplication" android:hardwareAccelerated="true" android:label="REMOTE_CONTROL_APP" android:requestLegacyExternalStorage="true" android:allowBackup="true" android:fullBackupOnly="false">
         <activity android:name="org.qtproject.qt.android.bindings.QtActivity" android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:launchMode="singleTop" android:screenOrientation="landscape" android:exported="true" android:label="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

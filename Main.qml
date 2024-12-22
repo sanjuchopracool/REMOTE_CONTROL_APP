@@ -4,8 +4,8 @@ import QtQuick.Layouts
 
 Window {
     id: main
-    width: 1920
-    height: 1080
+    width: 1920/3
+    height: 1080/3
     visible: true
     title: qsTr("REMOTE_CONTROL")
 
@@ -35,13 +35,22 @@ Window {
             Devices {
                 onShowServices: pagesLayout.currentIndex = 1
             }
-            Services {
-                onShowDevices: pagesLayout.currentIndex = 0
-                onShowCharacteristics: pagesLayout.currentIndex = 2
-            }
-            Characteristics {
-                onShowDevices: pagesLayout.currentIndex = 0
-                onShowServices: pagesLayout.currentIndex = 1
+            // Services {
+            //     onShowDevices: pagesLayout.currentIndex = 0
+            //     onShowCharacteristics: pagesLayout.currentIndex = 2
+            // }
+            // Characteristics {
+            //     onShowDevices: pagesLayout.currentIndex = 0
+            //     onShowServices: pagesLayout.currentIndex = 1
+            // }
+        }
+
+        Connections {
+            target: Device
+            function onRxTxConnectedChanged() {
+                if (Device.rxTxConnected) {
+                    pagesLayout.visible = false
+                }
             }
         }
     }

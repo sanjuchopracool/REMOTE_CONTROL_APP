@@ -24,6 +24,7 @@ SOURCES characteristicinfo.cpp device.cpp deviceinfo.cpp main.cpp serviceinfo.cp
 QML_FILES Characteristics.qml Devices.qml Dialog.qml Header.qml Label.qml  Menu.qml Services.qml
 RESOURCES assets/busy_dark.png
 QML_FILES Controller.qml
+QML_FILES ClickableLabel.qml
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -34,6 +35,7 @@ set_target_properties(appREMOTE_CONTROL_APP PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/MacOS/Info.plist"
+    QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )

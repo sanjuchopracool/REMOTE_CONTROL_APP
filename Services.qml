@@ -69,30 +69,17 @@ Rectangle {
             radius: 5
             width: servicesview.width
 
-            MouseArea {
+            ClickableLabel {
                 anchors.right: parent.right
                 anchors.rightMargin : 5
                 anchors.verticalCenter : parent.verticalCenter
-
-                width : connectText.implicitWidth + 10
-                height : connectText.implicitHeight + 10
 
                 visible : box.modelData.isRxTx
                 onClicked: {
                     Device.connectToService(box.modelData.serviceUuid)
                     servicesPage.showCharacteristics()
                 }
-
-                Rectangle {
-                    anchors.fill : parent
-                    border.width : 1
-                }
-
-                Text {
-                    id : connectText
-                    anchors.centerIn : parent
-                    text : qsTr("Connect")
-                }
+                text : qsTr("Connect")
             }
 
             Label {

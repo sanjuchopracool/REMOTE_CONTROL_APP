@@ -59,13 +59,13 @@ Rectangle {
         clip: true
 
         anchors.top: header.bottom
-        anchors.bottom: connectToggle.top
+        anchors.bottom: menu.top
         model: Device.devicesList
 
         delegate: Rectangle {
             required property var modelData
             id: box
-            height: 100
+            height: 50
             width: theListView.width
             color: "lightsteelblue"
             border.width: 2
@@ -76,7 +76,7 @@ Rectangle {
                 anchors.fill: parent
                 onClicked: {
                     Device.scanServices(box.modelData.deviceAddress)
-                    showServices()
+                    // showServices()
                 }
             }
 
@@ -95,22 +95,6 @@ Rectangle {
                 anchors.bottomMargin: 5
             }
         }
-    }
-
-    Menu {
-        id: connectToggle
-
-        menuWidth: parent.width
-        anchors.bottom: menu.top
-        menuText: {
-            visible = Device.devicesList.length > 0
-            if (Device.useRandomAddress)
-                return "Address type: Random"
-            else
-                return "Address type: Public"
-        }
-
-        onButtonClick: Device.useRandomAddress = !Device.useRandomAddress
     }
 
     //! [permission-object]

@@ -35,6 +35,9 @@ class Device: public QObject
                NOTIFY randomAddressChanged)
     Q_PROPERTY(bool state READ state NOTIFY stateChanged)
     Q_PROPERTY(bool controllerError READ hasControllerError)
+    Q_PROPERTY(bool rxTxConnected READ rxTxConnected NOTIFY rxTxConnectionChanged)
+    Q_PROPERTY(QString connectedDeviceName READ connectedDeviceName NOTIFY currentDeviceChanged)
+    Q_PROPERTY(QString connectedDeviceId READ connectedDeviceId NOTIFY currentDeviceChanged)
 
     QML_ELEMENT
     QML_SINGLETON
@@ -51,6 +54,10 @@ public:
 
     bool isRandomAddress() const;
     void setRandomAddress(bool newValue);
+
+    bool rxTxConnected() const;
+    QString connectedDeviceName() const;
+    QString connectedDeviceId() const;
 
 public slots:
     void startDeviceDiscovery();
@@ -86,6 +93,8 @@ Q_SIGNALS:
     void stateChanged();
     void disconnected();
     void randomAddressChanged();
+    void rxTxConnectionChanged();
+    void currentDeviceChanged();
 
 private:
     void setUpdate(const QString &message);
