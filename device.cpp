@@ -413,7 +413,6 @@ void Device::writeData(QByteArray data)
     if (connected && m_rx_tx_service && controller
         && controller->state() == QLowEnergyController::DiscoveredState) {
         if (m_tx_characteric.isValid()) {
-            qDebug() << " T ";
             m_rx_tx_service->writeCharacteristic(m_tx_characteric,
                                                  data,
                                                  QLowEnergyService::WriteMode::WriteWithoutResponse);
