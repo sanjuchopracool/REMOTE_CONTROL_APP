@@ -5,7 +5,7 @@
 
    Create a BLE server that, once we receive a connection, will send periodic notifications.
    The service advertises itself as: 6E400001-B5A3-F393-E0A9-E50E24DCCA9E
-   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE" 
+   Has a characteristic of: 6E400002-B5A3-F393-E0A9-E50E24DCCA9E - used for receiving data with "WRITE"
    Has a characteristic of: 6E400003-B5A3-F393-E0A9-E50E24DCCA9E - used to send data with  "NOTIFY"
 
    The design of creating the BLE server is:
@@ -17,14 +17,13 @@
    6. Start advertising.
 
    In this example rxValue is the data received (only accessible inside that function).
-   And txValue is the data to be sent, in this example just a byte incremented every second. 
+   And txValue is the data to be sent, in this example just a byte incremented every second.
 */
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
-#include <ESP32Servo.h> 
-
+#include <ESP32Servo.h>
 
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
@@ -32,64 +31,102 @@ float txValue = 0;
 BLEServer *pServer = nullptr;
 char buffer[32] = {};
 
-int16_t roll = 0;
-int16_t pitch = 0;
 int16_t throttle = 0;
-int16_t yaw = 0;
+int16_t steering = 0;
 
-// servo 
+enum Flags
+{
+  Invert_Throttle = 0x01,
+  Invert_Steering = 0x02,
+};
+
+bool throttle_inverted = true;
+bool steering_inverted = false;
+int8_t throttle_front_percentage = 50;
+int8_t throttle_back_percentage = 30;
+int8_t steering_percentage = 100;
+
+// servo
 Servo servo_steering;
 Servo servo_throttle;
 constexpr int steering_pin = 8;
 constexpr int throttle_pin = 9;
 
 bool previous_connected = false;
-//std::string rxValue; // Could also make this a global var to access it in loop()
+bool received_config = false;
+// std::string rxValue; // Could also make this a global var to access it in loop()
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
+#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-       Serial.println("*********Connected*********");
-    };
+class MyServerCallbacks : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer)
+  {
+    deviceConnected = true;
+    Serial.println("*********Connected*********");
+  };
 
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-      Serial.println("*********disconnected*********");
-      pServer->startAdvertising();
-    }
+  void onDisconnect(BLEServer *pServer)
+  {
+    deviceConnected = false;
+    Serial.println("*********disconnected*********");
+    pServer->startAdvertising();
+  }
 };
 
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      String rxValue = pCharacteristic->getValue();
+class MyCallbacks : public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *pCharacteristic)
+  {
+    String rxValue = pCharacteristic->getValue();
 
-      if (rxValue.length() == 8) {
-            // A E T R
-    // A -> ROLL
-    // E -> PITCH
-    // T -> Throttle
-    // R -> Yaw
-     roll = (rxValue[1] << 8) +  rxValue[0];
-     pitch = (rxValue[3] << 8) +  rxValue[2];
-     throttle = (rxValue[5] << 8) +  rxValue[4];
-     yaw = (rxValue[7] << 8) +  rxValue[6];
+    if (received_config && rxValue.length() == 4)
+    {
+      // int18_t throttle, steering
+      throttle = (rxValue[1] << 8) + rxValue[0];
+      steering = (rxValue[3] << 8) + rxValue[2];
 
-     servo_throttle.writeMicroseconds(1500 + pitch/20);
-     servo_steering.writeMicroseconds(1500 + yaw/20);
-    //  sprintf(buffer, "%d %d %d %d", roll, pitch, throttle, yaw);
-    //  Serial.println(buffer);
-      }
+    // 1500 for middle, , incoming value +- 10000 , value*500/10000 = value / 20
+    // for percentage multi ply by it and devide by 100
+    // invert
+      int8_t throttle_dir = throttle_inverted ? -1 : 1;
+      int8_t steering_dir = steering_inverted ? -1 : 1; 
+
+      int th = throttle < 0 ? throttle*throttle_back_percentage : throttle*throttle_front_percentage;
+      th = th*throttle_dir / 2000;
+      int st = steering*steering_dir*steering_percentage / 2000;
+
+      servo_throttle.writeMicroseconds(1500 + th);
+      servo_steering.writeMicroseconds(1500 + st);
+      Serial.print("Th = ");
+      Serial.println(1500 + th);
+      Serial.print("St = ");
+      Serial.println(1500 + st);
     }
+    else if (rxValue.length() == 5)
+    {
+      // flags, steering, front, back, dummy
+      uint8_t flags = rxValue[0];
+      throttle_inverted = flags & Invert_Throttle;
+      steering_inverted = flags & Invert_Steering;
+
+      steering_percentage = rxValue[1];
+      throttle_front_percentage = rxValue[2];
+      throttle_back_percentage = rxValue[3];
+      //  sprintf(buffer, "%d %d %d %d", roll, pitch, throttle, yaw);
+       Serial.println("Config Receieved");
+       received_config = true;
+    }
+  }
 };
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   servo_steering.attach(steering_pin, 1000, 2000);
   servo_throttle.attach(throttle_pin, 1000, 2000);
@@ -106,16 +143,14 @@ void setup() {
 
   // Create a BLE Characteristic
   pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID_TX,
-                      BLECharacteristic::PROPERTY_NOTIFY
-                    );
-                      
+      CHARACTERISTIC_UUID_TX,
+      BLECharacteristic::PROPERTY_NOTIFY);
+
   pCharacteristic->addDescriptor(new BLE2902());
 
   BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID_RX,
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );
+      CHARACTERISTIC_UUID_RX,
+      BLECharacteristic::PROPERTY_WRITE);
 
   pCharacteristic->setCallbacks(new MyCallbacks());
 
@@ -130,26 +165,30 @@ void setup() {
   servo_steering.writeMicroseconds(1500);
 }
 
-void loop() {
-  if (deviceConnected) {
-//     // Fabricate some arbitrary junk for now...
-//     txValue = 1.23; //analogRead(readPin) / 3.456; // This could be an actual sensor reading!
+void loop()
+{
+  if (deviceConnected)
+  {
+    //     // Fabricate some arbitrary junk for now...
+    //     txValue = 1.23; //analogRead(readPin) / 3.456; // This could be an actual sensor reading!
 
-//     // Let's convert the value to a char array:
-//     char txString[8]; // make sure this is big enuffz
-//     dtostrf(txValue, 1, 2, txString); // float_val, min_width, digits_after_decimal, char_buffer
-    
-// //    pCharacteristic->setValue(&txValue, 1); // To send the integer value
-// //    pCharacteristic->setValue("Hello!"); // Sending a test message
-//     pCharacteristic->setValue(txString);
-    
-//     pCharacteristic->notify(); // Send the value to the app!
-  } else {
-    if (previous_connected == true) {
-        servo_throttle.writeMicroseconds(1500);
+    //     // Let's convert the value to a char array:
+    //     char txString[8]; // make sure this is big enuffz
+    //     dtostrf(txValue, 1, 2, txString); // float_val, min_width, digits_after_decimal, char_buffer
+
+    // //    pCharacteristic->setValue(&txValue, 1); // To send the integer value
+    // //    pCharacteristic->setValue("Hello!"); // Sending a test message
+    //     pCharacteristic->setValue(txString);
+
+    //     pCharacteristic->notify(); // Send the value to the app!
+  }
+  else
+  {
+    if (previous_connected == true)
+    {
+      servo_throttle.writeMicroseconds(1500);
     }
   }
 
   previous_connected = deviceConnected;
-
 }

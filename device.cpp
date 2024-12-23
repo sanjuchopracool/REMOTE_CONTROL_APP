@@ -402,20 +402,24 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
             }
         }
 
+        m_controler_object->sendConfig();
         // actual connected
         emit rxTxConnectionChanged();
     }
     emit characteristicsUpdated();
 }
 
-void Device::writeData(QByteArray data)
+void Device::writeData(QByteArray data, bool withRespons)
 {
     if (connected && m_rx_tx_service && controller
         && controller->state() == QLowEnergyController::DiscoveredState) {
         if (m_tx_characteric.isValid()) {
-            m_rx_tx_service->writeCharacteristic(m_tx_characteric,
-                                                 data,
-                                                 QLowEnergyService::WriteMode::WriteWithoutResponse);
+            m_rx_tx_service
+                ->writeCharacteristic(m_tx_characteric,
+                                      data,
+                                      (withRespons
+                                           ? QLowEnergyService::WriteMode::WriteWithResponse
+                                           : QLowEnergyService::WriteMode::WriteWithoutResponse));
         }
     }
 }

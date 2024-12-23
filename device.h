@@ -85,7 +85,7 @@ private slots:
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
 
-    void writeData(QByteArray data);
+    void writeData(QByteArray data, bool withRespons);
 
 Q_SIGNALS:
     void devicesUpdated();
