@@ -49,11 +49,25 @@ int8_t steering_percentage = 100;
 // servo
 Servo servo_steering;
 Servo servo_throttle;
+
 constexpr int steering_pin = 8;
 constexpr int throttle_pin = 9;
+constexpr int buzzer_pin = 10;
+
+
+unsigned long last_data_receieved_time = 0;
+enum class BlinkStatus : uint8_t {
+  OFF,
+  ON,
+  BlinkSlow,  // 0.5 Hz Hz
+  BlinkMedium, // 1 Hz
+  BlinkFast    // 2.5 Hz
+};
+
+BlinkStatus buzzer_status = BlinkStatus::BlinkSlow;
 
 bool previous_connected = false;
-bool received_config = false;
+bool config_received = false;
 // std::string rxValue; // Could also make this a global var to access it in loop()
 
 // See the following for generating UUIDs:
@@ -62,6 +76,29 @@ bool received_config = false;
 #define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
 #define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 #define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+
+
+void update_pin_status(BlinkStatus status, int pin, unsigned long millis) {
+  switch(status) {
+    case BlinkStatus::OFF:
+      digitalWrite(pin, LOW);
+      return;
+    case BlinkStatus::ON:
+      digitalWrite(pin, HIGH);
+      return;
+    default:
+      break;
+  }
+
+  // blink logic, positive low, negative high
+  if (status == BlinkStatus::BlinkSlow) {
+     digitalWrite(pin, (millis/1000)%2);
+  } else if (status == BlinkStatus::BlinkMedium) {
+    digitalWrite(pin, (millis/500)%2);
+  }if (status == BlinkStatus::BlinkFast) {
+    digitalWrite(pin, (millis/200)%2);
+  }
+}
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
@@ -74,6 +111,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     deviceConnected = false;
+    buzzer_status = BlinkStatus::BlinkSlow;
     Serial.println("*********disconnected*********");
     pServer->startAdvertising();
   }
@@ -85,8 +123,11 @@ class MyCallbacks : public BLECharacteristicCallbacks
   {
     String rxValue = pCharacteristic->getValue();
 
-    if (received_config && rxValue.length() == 4)
+    if (config_received && rxValue.length() == 4)
     {
+      last_data_receieved_time = millis();
+      buzzer_status = BlinkStatus::OFF;
+      // Serial.println("Blink OFF");
       // int18_t throttle, steering
       throttle = (rxValue[1] << 8) + rxValue[0];
       steering = (rxValue[3] << 8) + rxValue[2];
@@ -103,13 +144,14 @@ class MyCallbacks : public BLECharacteristicCallbacks
 
       servo_throttle.writeMicroseconds(1500 + th);
       servo_steering.writeMicroseconds(1500 + st);
-      Serial.print("Th = ");
-      Serial.println(1500 + th);
-      Serial.print("St = ");
-      Serial.println(1500 + st);
+      // Serial.print("Th = ");
+      // Serial.println(1500 + th);
+      // Serial.print("St = ");
+      // Serial.println(1500 + st);
     }
     else if (rxValue.length() == 5)
     {
+      last_data_receieved_time = millis();
       // flags, steering, front, back, dummy
       uint8_t flags = rxValue[0];
       throttle_inverted = flags & Invert_Throttle;
@@ -120,7 +162,12 @@ class MyCallbacks : public BLECharacteristicCallbacks
       throttle_back_percentage = rxValue[3];
       //  sprintf(buffer, "%d %d %d %d", roll, pitch, throttle, yaw);
        Serial.println("Config Receieved");
-       received_config = true;
+
+       if (!config_received) {
+          buzzer_status = BlinkStatus::BlinkMedium;
+          Serial.println("Medium Blink");
+          config_received = true;
+       }
     }
   }
 };
@@ -130,6 +177,7 @@ void setup()
   Serial.begin(115200);
   servo_steering.attach(steering_pin, 1000, 2000);
   servo_throttle.attach(throttle_pin, 1000, 2000);
+  pinMode(buzzer_pin, OUTPUT);
 
   // Create the BLE Device
   BLEDevice::init("ESP32 UART Test"); // Give it a name
@@ -191,4 +239,18 @@ void loop()
   }
 
   previous_connected = deviceConnected;
+
+  auto time_in_ms = millis();
+  update_pin_status(buzzer_status, buzzer_pin, time_in_ms);
+
+  if (deviceConnected && config_received) {
+    //if we have not received in last one second
+
+    // sometime last_time is recent then time_in_ms
+    // becasue its updated from callback (perhaps using interrupt)
+    const int diff = (time_in_ms - last_data_receieved_time);
+    if (diff > 1000) {
+      buzzer_status = BlinkStatus::BlinkFast;
+    }
+  }
 }
