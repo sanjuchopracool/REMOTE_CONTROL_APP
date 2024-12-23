@@ -58,6 +58,7 @@ Rectangle {
             height : root.joystickDim
             anchors.left : parent.left
             anchors.bottom: parent.bottom
+            horizontalOnly: true
         }
 
         Connections {
@@ -75,6 +76,7 @@ Rectangle {
             height : root.joystickDim
             anchors.right: parent.right
             anchors.bottom: parent.bottom
+            verticalOnly: true
         }
 
         Connections {
